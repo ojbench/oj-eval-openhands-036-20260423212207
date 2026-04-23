@@ -24,10 +24,10 @@ public:
     dynamic_bitset &operator = (const dynamic_bitset &) = default;
     
     dynamic_bitset(std::size_t n) : bit_size(n) {
-        if (n == 0) return;
-        std::size_t blocks = (n + 63) / 64;
-        data.resize(blocks, 0);
-        data.shrink_to_fit();
+        if (n > 0) {
+            std::size_t blocks = (n + 63) / 64;
+            data.resize(blocks, 0);
+        }
     }
     
     dynamic_bitset(const std::string &str) : bit_size(str.size()) {
