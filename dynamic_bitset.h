@@ -7,6 +7,8 @@
 #include <iostream>
 #include <algorithm>
 
+namespace sjtu {
+
 struct dynamic_bitset {
 private:
     std::vector<uint64_t> data;
@@ -218,5 +220,7 @@ public:
         return *this;
     }
 };
+
+} // namespace sjtu
 
 #endif
