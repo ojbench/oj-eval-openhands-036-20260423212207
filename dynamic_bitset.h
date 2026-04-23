@@ -78,30 +78,29 @@ public:
     }
     
     bool none() const {
-        for (std::size_t i = 0; i < data.size(); ++i) {
-            if (i < data.size() - 1) {
-                if (data[i] != 0) return false;
-            } else {
-                std::size_t valid_bits = bit_size % 64;
-                if (valid_bits == 0) valid_bits = 64;
-                uint64_t mask = (valid_bits == 64) ? ~0ULL : ((1ULL << valid_bits) - 1);
-                if ((data[i] & mask) != 0) return false;
-            }
+        if (bit_size == 0) return true;
+        std::size_t full_blocks = bit_size / 64;
+        for (std::size_t i = 0; i < full_blocks; ++i) {
+            if (data[i] != 0) return false;
+        }
+        std::size_t remaining_bits = bit_size % 64;
+        if (remaining_bits > 0) {
+            uint64_t mask = (1ULL << remaining_bits) - 1;
+            if ((data[full_blocks] & mask) != 0) return false;
         }
         return true;
     }
     
     bool all() const {
         if (bit_size == 0) return true;
-        for (std::size_t i = 0; i < data.size(); ++i) {
-            if (i < data.size() - 1) {
-                if (data[i] != ~0ULL) return false;
-            } else {
-                std::size_t valid_bits = bit_size % 64;
-                if (valid_bits == 0) valid_bits = 64;
-                uint64_t mask = (valid_bits == 64) ? ~0ULL : ((1ULL << valid_bits) - 1);
-                if ((data[i] & mask) != mask) return false;
-            }
+        std::size_t full_blocks = bit_size / 64;
+        for (std::size_t i = 0; i < full_blocks; ++i) {
+            if (data[i] != ~0ULL) return false;
+        }
+        std::size_t remaining_bits = bit_size % 64;
+        if (remaining_bits > 0) {
+            uint64_t mask = (1ULL << remaining_bits) - 1;
+            if ((data[full_blocks] & mask) != mask) return false;
         }
         return true;
     }
@@ -112,28 +111,55 @@ public:
     
     dynamic_bitset &operator |= (const dynamic_bitset &other) {
         std::size_t min_size = std::min(bit_size, other.bit_size);
-        std::size_t min_blocks = (min_size + 63) / 64;
-        for (std::size_t i = 0; i < min_blocks; ++i) {
+        if (min_size == 0) return *this;
+        
+        std::size_t full_blocks = min_size / 64;
+        for (std::size_t i = 0; i < full_blocks; ++i) {
             data[i] |= other.data[i];
         }
+        
+        std::size_t remaining_bits = min_size % 64;
+        if (remaining_bits > 0) {
+            uint64_t mask = (1ULL << remaining_bits) - 1;
+            data[full_blocks] = (data[full_blocks] & ~mask) | ((data[full_blocks] | other.data[full_blocks]) & mask);
+        }
+        
         return *this;
     }
     
     dynamic_bitset &operator &= (const dynamic_bitset &other) {
         std::size_t min_size = std::min(bit_size, other.bit_size);
-        std::size_t min_blocks = (min_size + 63) / 64;
-        for (std::size_t i = 0; i < min_blocks; ++i) {
+        if (min_size == 0) return *this;
+        
+        std::size_t full_blocks = min_size / 64;
+        for (std::size_t i = 0; i < full_blocks; ++i) {
             data[i] &= other.data[i];
         }
+        
+        std::size_t remaining_bits = min_size % 64;
+        if (remaining_bits > 0) {
+            uint64_t mask = (1ULL << remaining_bits) - 1;
+            data[full_blocks] = (data[full_blocks] & ~mask) | ((data[full_blocks] & other.data[full_blocks]) & mask);
+        }
+        
         return *this;
     }
     
     dynamic_bitset &operator ^= (const dynamic_bitset &other) {
         std::size_t min_size = std::min(bit_size, other.bit_size);
-        std::size_t min_blocks = (min_size + 63) / 64;
-        for (std::size_t i = 0; i < min_blocks; ++i) {
+        if (min_size == 0) return *this;
+        
+        std::size_t full_blocks = min_size / 64;
+        for (std::size_t i = 0; i < full_blocks; ++i) {
             data[i] ^= other.data[i];
         }
+        
+        std::size_t remaining_bits = min_size % 64;
+        if (remaining_bits > 0) {
+            uint64_t mask = (1ULL << remaining_bits) - 1;
+            data[full_blocks] = (data[full_blocks] & ~mask) | ((data[full_blocks] ^ other.data[full_blocks]) & mask);
+        }
+        
         return *this;
     }
     
